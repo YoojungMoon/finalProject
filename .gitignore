@@ -34,3 +34,4 @@ BUILD/myProtocol.hex
 .vs/slnx.sqlite-journal
 .vs/finalProject/v17/ipch/AutoPCH/b55e9ad03259d523/L3_LLINTERFACE.ipch
 *.vsidx
+/BUILD

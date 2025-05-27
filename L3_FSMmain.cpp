@@ -119,9 +119,13 @@ void L3_FSMrun(void)
 
 
         case MODE_1:
-            pc.printf("--------------------yoon start---------------------\n");
-            pc.printf("MODE_1\n");
-            printRoleFromInput((char*)originalWord); // 역할 출력
+            // 호스트 - 역할 배정 : 1,2,5,6 자리에 실제 플레이어 id 넣기! 
+            handleMode1((char*)originalWord, 1, 2, 5, 6);
+
+            // 역할 출력 (호스트 - 전체 출력, 플레이어 - 개인 역할 출력)
+            printRoleFromInput((char*)originalWord); 
+
+            // DAY로 상태 전환
             main_state = DAY;
             break;
 

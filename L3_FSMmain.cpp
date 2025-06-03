@@ -5,13 +5,14 @@
 #include "protocol_parameters.h"
 #include "mbed.h"
 
+#include "L3_host.h"
+
 
 //FSM state -------------------------------------------------
 #define L3STATE_IDLE                0
 
-
 //state variables
-static uint8_t main_state = L3STATE_IDLE; //protocol state
+uint8_t main_state = TEST; //protocol state
 static uint8_t prev_state = main_state;
 
 //SDU (input)
@@ -22,6 +23,7 @@ static uint8_t sdu[1030];
 
 //serial port interface
 static Serial pc(USBTX, USBRX);
+static uint8_t myId;
 static uint8_t myDestId;
 
 //application event handler : generating SDU from keyboard input
@@ -51,9 +53,9 @@ static void L3service_processInputWord(void)
 
 
 
-void L3_initFSM(uint8_t destId)
+void L3_initFSM(uint8_t thisId, uint8_t destId)
 {
-
+    myId = thisId;
     myDestId = destId;
     //initialize service layer
     pc.attach(&L3service_processInputWord, Serial::RxIrq);
@@ -72,35 +74,60 @@ void L3_FSMrun(void)
     //FSM should be implemented here! ---->>>>
     switch (main_state)
     {
-        case L3STATE_IDLE: //IDLE state description
-            
-            if (L3_event_checkEventFlag(L3_event_msgRcvd)) //if data reception event happens
-            {
-                //Retrieving data info.
-                uint8_t* dataPtr = L3_LLI_getMsgPtr();
-                uint8_t size = L3_LLI_getSize();
+        case L3STATE_IDLE:
+            main_state = TEST;
+        case TEST:
 
-                debug("\n -------------------------------------------------\nRCVD MSG : %s (length:%i)\n -------------------------------------------------\n", 
-                            dataPtr, size);
-                
-                pc.printf("Give a word to send : ");
-                
-                L3_event_clearEventFlag(L3_event_msgRcvd);
+            // 게스트이면 (임시로 -> endnode를 1로 하면 호스트)
+            if (myId!=1) {
+
+                if (L3_event_checkEventFlag(L3_event_msgRcvd)) // 메시지를 받으면 
+                {
+                    uint8_t* dataPtr = L3_LLI_getMsgPtr();
+                    uint8_t size = L3_LLI_getSize();
+
+                    debug("\n --------------------\nyonnnnnnnnnn: %s (length:%i)\n -------------------------------\n", 
+                                dataPtr, size);
+                    
+                    L3_event_clearEventFlag(L3_event_msgRcvd);
+
+                    
+                    main_state = END;
+                }
+
             }
-            else if (L3_event_checkEventFlag(L3_event_dataToSend)) //if data needs to be sent (keyboard input)
+            // 호스트인 경우 (임시로 endnode == 1이면 호스트)
+            else
             {
-                //msg header setting
-                strcpy((char*)sdu, (char*)originalWord);
-                debug("[L3] msg length : %i\n", wordLen);
-                L3_LLI_dataReqFunc(sdu, wordLen, myDestId);
+                if (L3_timer_getTimerStatus() == 0)  // 타이머가 꺼져 있으면 (즉, 보낼 수 있으면)
+                {
+                    // 메시지 정보
+                    const char* originalWord = "gkgk";  // 전달할 내용 
+                    int wordLen = strlen(originalWord); // 문자열 길이 
+                    int myDestId = 31;                  // 목적지 ID
 
-                debug_if(DBGMSG_L3, "[L3] sending msg....\n");
-                wordLen = 0;
+                    // 메시지 전송
+                    strcpy((char*)sdu, (char*)originalWord);
+                    debug("%u 에게 전송 중...", myDestId);
+                    L3_LLI_dataReqFunc(sdu, wordLen, myDestId);
 
-                pc.printf("Give a word to send : ");
+                    // 전송 후 타이머 시작 (예: 1초 동안 다시 전송 금지)
+                    L3_timer_startTimer();
 
-                L3_event_clearEventFlag(L3_event_dataToSend);
+                    // 전송 확인되면 상태 종료
+                    if (L3_event_checkEventFlag(L3_event_dataSendCnf)) {
+                        main_state = END;
+                    }
+                }
+                else {
+                    // 타이머가 동작 중이면 아무 것도 하지 않음 (보내지 않음)
+                }
             }
+
+
+            break;
+
+        case END:
             break;
 
         default :

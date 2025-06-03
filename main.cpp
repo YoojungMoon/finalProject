@@ -2,6 +2,7 @@
 #include "string.h"
 #include "L2_FSMmain.h"
 #include "L3_FSMmain.h"
+#include "L3_host.h"
 
 //serial port interface
 Serial pc(USBTX, USBRX);
@@ -30,11 +31,15 @@ int main(void){
 
     //initialize lower layer stacks
     L2_initFSM(input_thisId);
-    L3_initFSM(input_destId);
+    L3_initFSM(input_thisId, input_destId);
     
     while(1)
     {
+        if (main_state == END)
+            break;
         L2_FSMrun();
         L3_FSMrun();
     }
+
+    pc.printf("game over");
 }

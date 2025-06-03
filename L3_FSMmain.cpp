@@ -76,55 +76,9 @@ void L3_FSMrun(void)
     {
         case L3STATE_IDLE:
             main_state = TEST;
+
         case TEST:
-
-            // 게스트이면 (임시로 -> endnode를 1로 하면 호스트)
-            if (myId!=1) {
-
-                if (L3_event_checkEventFlag(L3_event_msgRcvd)) // 메시지를 받으면 
-                {
-                    uint8_t* dataPtr = L3_LLI_getMsgPtr();
-                    uint8_t size = L3_LLI_getSize();
-
-                    debug("\n --------------------\nyonnnnnnnnnn: %s (length:%i)\n -------------------------------\n", 
-                                dataPtr, size);
-                    
-                    L3_event_clearEventFlag(L3_event_msgRcvd);
-
-                    
-                    main_state = END;
-                }
-
-            }
-            // 호스트인 경우 (임시로 endnode == 1이면 호스트)
-            else
-            {
-                if (L3_timer_getTimerStatus() == 0)  // 타이머가 꺼져 있으면 (즉, 보낼 수 있으면)
-                {
-                    // 메시지 정보
-                    const char* originalWord = "gkgk";  // 전달할 내용 
-                    int wordLen = strlen(originalWord); // 문자열 길이 
-                    int myDestId = 31;                  // 목적지 ID
-
-                    // 메시지 전송
-                    strcpy((char*)sdu, (char*)originalWord);
-                    debug("%u 에게 전송 중...", myDestId);
-                    L3_LLI_dataReqFunc(sdu, wordLen, myDestId);
-
-                    // 전송 후 타이머 시작 (예: 1초 동안 다시 전송 금지)
-                    L3_timer_startTimer();
-
-                    // 전송 확인되면 상태 종료
-                    if (L3_event_checkEventFlag(L3_event_dataSendCnf)) {
-                        main_state = END;
-                    }
-                }
-                else {
-                    // 타이머가 동작 중이면 아무 것도 하지 않음 (보내지 않음)
-                }
-            }
-
-
+            handleTestState(1, myId, myDestId, "gsgs", sdu, END);
             break;
 
         case END:

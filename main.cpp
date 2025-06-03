@@ -35,11 +35,11 @@ int main(void){
     
     while(1)
     {
-        if (main_state == END)
+        if (main_state == OVER)
             break;
         L2_FSMrun();
         L3_FSMrun();
     }
 
-    pc.printf("game over");
+    pc.printf("GAME OVER");
 }

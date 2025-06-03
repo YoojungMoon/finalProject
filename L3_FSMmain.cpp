@@ -1,3 +1,5 @@
+#include <iostream>
+#include <algorithm>
 #include "L3_FSMevent.h"
 #include "L3_msg.h"
 #include "L3_timer.h"
@@ -12,7 +14,7 @@
 #define L3STATE_IDLE                0
 
 //state variables
-uint8_t main_state = TEST; //protocol state
+uint8_t main_state = L3STATE_IDLE; //protocol state
 static uint8_t prev_state = main_state;
 
 //SDU (input)
@@ -75,15 +77,34 @@ void L3_FSMrun(void)
     switch (main_state)
     {
         case L3STATE_IDLE:
-            main_state = TEST;
+            main_state = MODE_1;
 
-        case TEST:
-            handleTestState(1, myId, myDestId, "gsgs", sdu, END);
+        case MODE_1:
+        {
+            players.clear();  // 기존 내용 초기화
+
+            // 플레이어 4명 생성, id는 1, 3, 6, 7로 지정
+            std::vector<uint8_t> ids = {1, 3, 6, 7};
+            for (int i = 0; i < 4; ++i) {
+                players.push_back(Player{ROLE_CITIZEN, ids[i], true});
+            }
+
+            assignRandomRoles(players);
+
+            // 1번 플레이어(id==1) 역할 출력
+            auto it = std::find_if(players.begin(), players.end(),
+                                [](const Player& p){ return p.id == 1; });
+            if (it != players.end()) {
+                std::string roleStr = std::string("당신의 역할 : ") + roleToString(it->role);
+                handleTestState(1, myId, myDestId, roleStr.c_str(), sdu, OVER, OVER);
+            } else {
+                std::cerr << "플레이어 ID 1을 찾을 수 없습니다." << std::endl;
+            }
+
             break;
+        }
 
-        case END:
-            break;
-
+        
         default :
             break;
     }

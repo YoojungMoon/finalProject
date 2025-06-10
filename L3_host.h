@@ -28,6 +28,9 @@ struct Player {
 // 전역 플레이어 목록
 extern std::vector<Player> players;
 
+// 전역 변수
+static int now_try = 0;
+
 // FSM state
 #define MODE_1    1
 #define DAY       2
@@ -41,6 +44,7 @@ extern std::vector<Player> players;
 // 메소드 선언
 void assignRandomRoles(std::vector<Player>& players);
 const char* roleToString(Role role);
-void handleTestState(int hostId, uint8_t myId, uint8_t myDestId, const char* msg, uint8_t* sdu, uint8_t state, uint8_t myDestState);
+bool handleTestState(int hostId, uint8_t myId, uint8_t myDestId, const char* msg, uint8_t* sdu, uint8_t mystate, uint8_t myDestState);
+Player* findPlayerById(std::vector<Player>& players, uint8_t id);
 
 #endif

@@ -61,8 +61,6 @@ void L3_initFSM(uint8_t thisId, uint8_t destId)
     myDestId = destId;
     //initialize service layer
     pc.attach(&L3service_processInputWord, Serial::RxIrq);
-
-    pc.printf("Give a word to send : ");
 }
 
 void L3_FSMrun(void)
@@ -78,29 +76,37 @@ void L3_FSMrun(void)
     {
         case L3STATE_IDLE:
             main_state = MODE_1;
+            break;
 
         case MODE_1:
         {
-            players.clear();  // 기존 내용 초기화
+            static int currentIndex = 0; // for 상태 저장
+            uint8_t hostId = 100;
+            uint8_t destIds[4] = {1, 2, 3, 8};
 
-            // 플레이어 4명 생성, id는 1, 3, 6, 7로 지정
-            std::vector<uint8_t> ids = {1, 3, 6, 7};
-            for (int i = 0; i < 4; ++i) {
-                players.push_back(Player{ROLE_CITIZEN, ids[i], true});
-            }
+            if (currentIndex < 4) {
+                myDestId = destIds[currentIndex];
+                L2_initFSM(myId); 
+                L3_initFSM(myId, myDestId);
 
-            assignRandomRoles(players);
-
-            // 1번 플레이어(id==1) 역할 출력
-            auto it = std::find_if(players.begin(), players.end(),
-                                [](const Player& p){ return p.id == 1; });
-            if (it != players.end()) {
-                std::string roleStr = std::string("당신의 역할 : ") + roleToString(it->role);
-                handleTestState(1, myId, myDestId, roleStr.c_str(), sdu, OVER, OVER);
+                // 완료될 때까지 기다림
+                if (handleTestState(hostId, myId, myDestId, "hoelo", sdu, MODE_1, DAY)) {
+                    currentIndex++; // 완료되면 다음 인덱스로
+                }
             } else {
-                std::cerr << "플레이어 ID 1을 찾을 수 없습니다." << std::endl;
+                // 호스트 상태 변경 
+                main_state = DAY;
             }
+            break;
+        }
 
+        case DAY:
+            main_state = VOTE;
+            break;
+
+        case VOTE:
+        {
+            main_state = OVER;
             break;
         }
 

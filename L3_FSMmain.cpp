@@ -19,7 +19,7 @@ bool waitingAck = false;     // ACK 대기 여부
 //FSM state -------------------------------------------------
 #define L3STATE_IDLE                0
 
-#define NUM_PLAYERS 10
+#define NUM_PLAYERS 4
 static bool dead[NUM_PLAYERS] = { false };  // 전부 살아있다고 초기화
 
 
